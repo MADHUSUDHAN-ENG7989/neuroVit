@@ -1,0 +1,29 @@
+1. The PDSCNN → RRELM base paper (this is your core skeleton)
+
+"A hybrid explainable model based on advanced machine learning and deep learning models for classifying brain tumors using MRI images" — Scientific Reports, 2025
+The feature extraction process uses a parallel depthwise separable convolutional neural network (PDSCNN) to capture spatial features efficiently, extracting 256 prominent features from each MRI image, which are then standardized and fed into the ELM model for classification. 
+Nature
+Nature
+
+https://www.nature.com/articles/s41598-025-85874-7
+Free full text: https://pmc.ncbi.nlm.nih.gov/articles/PMC11724088/
+2. ViT-features-into-traditional-classifier paper (justifies swapping/adding RRELM after ViT)
+
+"Hybrid Ensemble Approaches: Optimal Deep Feature Fusion and Hyperparameter-Tuned Classifier Ensembling for Enhanced Brain Tumor Classification" — arXiv, 2025
+Pretrained ViT architectures, such as ViT-Base Transformer, were employed to extract feature vectors from the MRI images... Once the feature vectors were extracted, they were fed into traditional ML classifiers for brain tumor classification. 
+arxiv
+
+https://arxiv.org/pdf/2507.12177
+3. CNN + ViT dual-branch fusion paper (justifies fusing PDSCNN and ViT features before the classifier)
+
+"Hybrid model integration with explainable AI for brain tumor diagnosis: a unified approach to MRI analysis and prediction" — Scientific Reports, 2025
+ResNet101 captures deep, hierarchical spatial patterns, while Xception focuses on channel-wise and fine-grained spatial relationships through depthwise separable convolutions... the combined features act as a form of implicit regularization, leading to improved generalization, and this fused representation is passed to classical ML classifiers. 
+Nature
+
+https://www.nature.com/articles/s41598-025-06455-2
+Free: https://pmc.ncbi.nlm.nih.gov/articles/PMC12216004/
+4. Original RELM foundational paper (root citation for the RRELM head)
+
+Gumaei et al., "A Hybrid Feature Extraction Method With Regularized Extreme Learning Machine for Brain Tumor Classification", IEEE Access, 2019
+
+https://ieeexplore.ieee.org/abstract/document/8664160

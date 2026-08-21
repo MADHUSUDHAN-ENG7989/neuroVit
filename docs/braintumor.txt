@@ -1,0 +1,26 @@
+1. Brain Tumor MRI Dataset (Masoud Nickparvar) — best starting point
+
+7,023 images, 4 classes: glioma, meningioma, pituitary, no tumor
+This is a combination of the Figshare, SARTAJ, and Br35H datasets, already cleaned and merged 
+arxiv
+Kaggle: masoudnickparvar/brain-tumor-mri-dataset
+
+2. Figshare Brain Tumor Dataset (Jun Cheng, Southern Medical University)
+
+3,064 T1-weighted contrast-enhanced images from 233 patients, 3 tumor types: meningioma (708), glioma (1426), pituitary (930) 
+arxiv
+Stored as .mat files with per-slice labels — the "gold standard" academic source, good if you want clinical provenance
+Original host: Figshare (search "brain tumor dataset figshare Cheng")
+
+3. SARTAJ Brain Tumor Classification (Kaggle)
+
+Same 4-class setup (glioma/meningioma/pituitary/normal), older/smaller, often used as one of the source datasets merged into #1
+Kaggle: sartajbhuvaji/brain-tumor-classification-mri
+
+4. BraTS (Brain Tumor Segmentation Challenge)
+
+If you later want segmentation, not just classification: multimodal MRI (T1, T1ce, T2, FLAIR) with pixel-level tumor masks, gold standard for glioma research
+Hosted via Synapse/Medical Segmentation Decathlon — heavier to set up
+
+5. MRI with Bounding Boxes 5,249 MRI images with YOLO-format bounding boxes across 4 tumor classes, if you want detection + classification. 
+Kaggle
