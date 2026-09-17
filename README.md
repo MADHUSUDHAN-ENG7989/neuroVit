@@ -321,18 +321,39 @@ albumentations>=1.3.0
 
 ## 🚀 Usage
 
-### Training
+### Running the Web Interface
+
+We have provided a modern web interface for you to easily test the standalone PDSCNN model.
+
+#### 1. Setup the Checkpoint
+Ensure your trained model is placed in the correct path:
+`models/checkpoints/pdscnn.pth`
+
+#### 2. Start the Backend Server
 ```bash
+cd backend
+npm install
+npm start
+```
+*Runs on http://localhost:3001*
+
+#### 3. Start the Frontend Application
+```bash
+cd frontend
+npm install
+npm run dev
+```
+*Runs on http://localhost:5173*
+
+### CLI Training & Evaluation
+```bash
+# Training
 python training/train.py --config configs/config.yaml --model hybrid
-```
 
-### Evaluation
-```bash
+# Evaluation
 python evaluation/evaluate.py --checkpoint checkpoints/best_model.pth
-```
 
-### Generate XAI Explanations
-```bash
+# Generate XAI Explanations
 python xai/visualize.py --image path/to/mri.jpg --checkpoint checkpoints/best_model.pth
 ```
 
@@ -412,10 +433,10 @@ python xai/visualize.py --image path/to/mri.jpg --checkpoint checkpoints/best_mo
 ### Phase 6: Documentation & Finalization
 - [ ] All notebooks cleaned and documented
 - [ ] Paper/report draft started
-- [ ] Demo app / inference script created
+- [x] Web Demo (React Frontend + Node Backend) created
 
 ### Last Completed Task
-> **2026-07-26**: Project initialized. README created with full architecture plan, dataset references, project structure, and progress tracker.
+> **2026-08-25**: Created a stunning React+Vite frontend and a Node.js Express backend to serve model inferences.
 
 ### Next Immediate Task
 > **TODO**: Download dataset from Kaggle (`masoudnickparvar/brain-tumor-mri-dataset`) and create the directory structure + requirements.txt.

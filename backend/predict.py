@@ -162,6 +162,7 @@ def main():
         print(json.dumps({"error": "rrelm.pkl or scaler.pkl not found in model/ dir. Please run the provided Colab code to save them and put them there."}))
         sys.exit(1)
 
+    print("Loading ViT...", file=sys.stderr)
     # 1. Load Models
     vit_base = ViTForImageClassification.from_pretrained(
         "google/vit-base-patch16-224-in21k",
@@ -169,12 +170,24 @@ def main():
         ignore_mismatched_sizes=True
     ).to(device)
     
+    print("Loading ViT weights...", file=sys.stderr)
     vit_sd = torch.load(vit_path, map_location=device)
     # Fix for transformers version differences (vit.layers vs vit.encoder.layer)
-    vit_sd = {k.replace('vit.layers.', 'vit.encoder.layer.'): v for k, v in vit_sd.items()}
-    vit_base.load_state_dict(vit_sd, strict=False)
+    new_vit_sd = {}
+    for k, v in vit_sd.items():
+        new_k = k.replace('vit.layers.', 'vit.encoder.layer.')
+        new_k = new_k.replace('.attention.q_proj.', '.attention.attention.query.')
+        new_k = new_k.replace('.attention.k_proj.', '.attention.attention.key.')
+        new_k = new_k.replace('.attention.v_proj.', '.attention.attention.value.')
+        new_k = new_k.replace('.attention.o_proj.', '.attention.output.dense.')
+        new_k = new_k.replace('.mlp.fc1.', '.intermediate.dense.')
+        new_k = new_k.replace('.mlp.fc2.', '.output.dense.')
+        new_vit_sd[new_k] = v
+        
+    vit_base.load_state_dict(new_vit_sd, strict=False)
     vit_base.eval()
 
+    print("Loading PDSCNN...", file=sys.stderr)
     pdscnn_model = PDSCNN(num_classes=len(CLASS_NAMES)).to(device)
     pdscnn_model.load_state_dict(torch.load(pdscnn_path, map_location=device))
     pdscnn_model.eval()
@@ -185,6 +198,7 @@ def main():
     with open(rrelm_path, 'rb') as f:
         rrelm_model = pickle.load(f)
 
+    print("Preprocessing image...", file=sys.stderr)
     # 2. Prepare Image
     orig_img = Image.open(args.image_path).convert('RGB')
     input_tensor = eval_transform(orig_img).unsqueeze(0).to(device)
@@ -198,11 +212,13 @@ def main():
         # Get PDSCNN feature
         _, pdscnn_feat = pdscnn_model(input_tensor)
 
-        # Combine
-        fused = torch.cat([vit_feat, pdscnn_feat], dim=1).cpu().numpy()
+        # Fusion
+        fused = torch.cat((pdscnn_feat, vit_feat), dim=1)
+        
+        # Scaling
+        fused_np = fused.cpu().numpy()
+        fused_scaled = scaler.transform(fused_np)
 
-    # Scale and predict
-    fused_scaled = scaler.transform(fused)
     raw_scores = rrelm_model.predict_proba(fused_scaled)[0]
     
     # RRELM outputs approximate one-hot vectors via least squares, which can be > 1 or < 0.
@@ -222,6 +238,7 @@ def main():
 
     rgb_img = denormalize(input_tensor.squeeze(0))
 
+    print("Generating Grad-CAM...", file=sys.stderr)
     # 4. Grad-CAM on PDSCNN
     try:
         pdscnn_wrapped = PDSCNNLogitsOnly(pdscnn_model).to(device)
@@ -235,6 +252,7 @@ def main():
     except Exception as e:
         gradcam_path = None
 
+    print("Generating SHAP (this may take a while)...", file=sys.stderr)
     # 5. SHAP on PDSCNN
     try:
         # Create a dummy background of zeros (ideal background would be sample images, but zero works for quick visualization)
