@@ -1,0 +1,33 @@
+{
+  "class_names": [
+    "glioma",
+    "meningioma",
+    "notumor",
+    "pituitary"
+  ],
+  "base_model": "google/vit-base-patch16-224-in21k",
+  "arch": "transformers.ViTForImageClassification",
+  "img_size": 224,
+  "patch_size": 16,
+  "num_hidden_layers": 12,
+  "num_attention_heads": 12,
+  "hidden_size": 768,
+  "intermediate_size": 3072,
+  "dataset_mean": [
+    0.2911639094700941,
+    0.2911639094700941,
+    0.2911639094700941
+  ],
+  "dataset_std": [
+    0.24096487462400504,
+    0.24096487462400504,
+    0.24096487462400504
+  ],
+  "batch_size": 64,
+  "epochs": 50,
+  "best_val_acc": 0.9868035190615836,
+  "num_train": 6363,
+  "num_val": 1364,
+  "num_test": 1364,
+  "notes": "Normalization stats computed by vit_finetune_colab.ipynb over processed_data_vit. No CLAHE is applied in the eval transform. NOTE: these stats differ from pdscnn_standalone_v2/config.json (0.1919/0.2058) - each model must use its own."
+}

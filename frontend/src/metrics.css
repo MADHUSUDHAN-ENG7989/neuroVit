@@ -1,0 +1,137 @@
+/* ============================================================
+   NeuroSight — System Monitoring (matches main design system)
+   Uses the same tokens/patterns as index.css (.card, chips,
+   gradient text, probability bars) so it blends with the UI.
+   ============================================================ */
+
+.metrics-zone {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.metrics-zone .card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+/* ── Target status pills ─────────────────────────────────── */
+.m-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.m-status .pill { font-family: 'JetBrains Mono', monospace; }
+.m-status .dim {
+  color: var(--text-3);
+  border-color: rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+}
+
+/* ── Stat tiles ──────────────────────────────────────────── */
+.m-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+.m-stat {
+  background: linear-gradient(160deg, rgba(255,255,255,0.025), rgba(255,255,255,0.01));
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 1.25rem 1.35rem 1.05rem;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+.m-stat:hover { border-color: var(--border-active); transform: translateY(-1px); }
+.m-stat-lbl {
+  display: flex; align-items: center; gap: 7px;
+  font-size: 0.74rem; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--text-3);
+}
+.m-stat-lbl i { font-style: normal; }
+.m-stat-val {
+  margin-top: 0.6rem;
+  font-size: 2rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1;
+  font-variant-numeric: tabular-nums;
+  background: var(--grad-brand); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.m-stat-sub {
+  margin-top: 0.6rem;
+  font-size: 0.72rem; color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+}
+.m-stat-sub em { color: var(--cyan); font-style: normal; }
+.m-stat-sub em.amber { color: var(--amber); }
+
+/* ── Utilization bars (mirror .prob-track/.prob-bar) ──────── */
+.m-bars {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.75rem;
+}
+.m-bar { display: flex; flex-direction: column; gap: 0.5rem; }
+.m-bar-lbl {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 0.82rem; color: var(--text-2); font-weight: 600;
+}
+.m-bar-lbl span:last-child {
+  font-size: 0.78rem; color: var(--text-3); font-family: 'JetBrains Mono', monospace; font-weight: 500;
+}
+.m-bar-track {
+  flex: 1; height: 10px; border-radius: 100px;
+  background: rgba(255,255,255,0.06); overflow: hidden;
+}
+.m-bar-fill {
+  height: 100%; border-radius: 100px;
+  transition: width 0.9s cubic-bezier(0.4,0,0.2,1);
+}
+.m-bar-fill.cpu { background: linear-gradient(90deg, var(--cyan), var(--violet)); }
+.m-bar-fill.mem { background: linear-gradient(90deg, var(--violet), var(--purple)); }
+.m-bar-fill.hot { background: linear-gradient(90deg, var(--amber), var(--rose)); }
+
+/* ── Sparklines ───────────────────────────────────────────── */
+.m-sparks {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+.m-spark {
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: rgba(255,255,255,0.015);
+  padding: 0.95rem 1.05rem 0.6rem;
+}
+.m-spark-lbl {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em;
+  color: var(--text-3); font-weight: 700;
+}
+.m-spark-lbl b {
+  color: var(--text-2); font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 0.68rem;
+  text-transform: none; letter-spacing: 0;
+}
+.m-spark svg { width: 100%; height: 54px; display: block; margin-top: 0.5rem; }
+.m-spark .pline { fill: none; stroke: var(--cyan); stroke-width: 1.8; }
+.m-spark .pline.violet { stroke: var(--violet); }
+
+/* ── Footer readout ───────────────────────────────────────── */
+.m-foot {
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.74rem; color: var(--text-3); font-family: 'JetBrains Mono', monospace;
+}
+.m-foot .ok { color: var(--emerald); }
+.m-foot .degraded { color: var(--amber); }
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .m-tiles { grid-template-columns: repeat(2, 1fr); }
+  .m-sparks { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 560px) {
+  .m-bars { grid-template-columns: 1fr; }
+  .m-tiles { grid-template-columns: 1fr 1fr; }
+}

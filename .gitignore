@@ -15,6 +15,7 @@
 *.weights
 *.ckpt
 *.safetensors
+*.bak
 
 # Model directories
 model/*.pth

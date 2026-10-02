@@ -1,0 +1,58 @@
+.git
+.gitattributes
+.github
+
+# Node
+**/node_modules
+**/dist
+npm-debug.log*
+yarn-debug.log*
+
+# Python
+**/__pycache__
+*.py[cod]
+.venv
+venv
+env
+
+# Databases / uploads / logs
+backend/uploads
+frontend/public/videos
+*.log
+backend/query_logs.jsonl
+
+# Heavy / non-runtime dirs (unused by builds)
+data
+models
+vit_extracted
+docs
+
+# Superseded model checkpoints (only the two dirs below are loaded at runtime)
+model/*.pth
+model/*.pth.bak
+model/*.pkl
+trained vit
+
+notebooks
+notebook.ipynb
+*.zip
+*.tar
+*.gz
+*.tgz
+*.rar
+*.7z
+
+# Secrets (made)
+*.csv
+*.pem
+*.p12
+*.key
+**/.env
+.env*
+*accessKeys*
+
+# IDE / OS
+.vscode
+.idea
+Thumbs.db
+.DS_Store

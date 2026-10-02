@@ -1,0 +1,23 @@
+# NeuroSight AI — Prometheus configuration
+# Prometheus runs inside the Docker network, so it resolves the other
+# containers by their compose service name, not localhost.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # NeuroSight Node.js backend (http_requests_*, model_*, mri_guardrail_*)
+  - job_name: "node-backend"
+    static_configs:
+      - targets: ["backend:5000"]
+
+  # Host-level metrics (CPU, RAM, disk, network) from the EC2 host
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  # Container-level metrics (CPU, RAM, network, fs for each container)
+  - job_name: "cadvisor"
+    static_configs:
+      - targets: ["cadvisor:8080"]

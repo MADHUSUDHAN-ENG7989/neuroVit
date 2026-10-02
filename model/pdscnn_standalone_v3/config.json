@@ -1,0 +1,44 @@
+{
+  "class_names": [
+    "glioma",
+    "meningioma",
+    "notumor",
+    "pituitary"
+  ],
+  "dataset_mean": [
+    0.28847097534331906,
+    0.28847097534331906,
+    0.28847097534331906
+  ],
+  "dataset_std": [
+    0.23991623594135877,
+    0.23991623594135877,
+    0.23991623594135877
+  ],
+  "img_size": 224,
+  "batch_size": 32,
+  "epochs": 80,
+  "lr": 0.001,
+  "weight_decay": 0.0005,
+  "label_smoothing": 0.05,
+  "mixup_alpha": 0.0,
+  "ema_decay": 0.999,
+  "augment": "light",
+  "dedup_threshold": 4,
+  "quality_gate": true,
+  "best_val_acc": 0.9659442724458205,
+  "num_train": 6030,
+  "num_val": 1292,
+  "num_test": 1293,
+  "test_acc_by_ckpt": {
+    "best": 0.949,
+    "final": 0.9505,
+    "ema": 0.3117
+  },
+  "test_ece_by_ckpt": {
+    "best": 0.0238,
+    "final": 0.0236,
+    "ema": 0.0399
+  },
+  "notes": "Stats recomputed from the images actually loaded (not hardcoded). Augmentation is anatomy-preserving. Train accuracy is measured on a clean non-augmented pass. Same 70/15/15 pool and fractions as the ViT run."
+}
