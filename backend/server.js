@@ -119,7 +119,7 @@ app.post('/api/predict', authRequired, upload.single('image'), (req, res) => {
   console.log('Received file for prediction:', imagePath);
 
   const pythonScript = path.join(__dirname, 'predict.py');
-  execFile('python', [pythonScript, '--image_path', imagePath], (error, stdout, stderr) => {
+  execFile('python', [pythonScript, '--image_path', imagePath], { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
     if (error) {
       console.error('Execution error:', error);
       console.error('stderr:', stderr);
@@ -127,7 +127,7 @@ app.post('/api/predict', authRequired, upload.single('image'), (req, res) => {
     }
 
     try {
-      const lines = stdout.trim().split('\n');
+      const lines = stdout.trim().split('\n').map(l => l.trim()).filter(Boolean);
       const result = JSON.parse(lines[lines.length - 1]);
 
       if (result.error) return res.status(500).json({ error: result.error });

@@ -58,65 +58,64 @@ def denormalize(img_tensor):
 # --- Model Architectures ---
 
 # 1. PDSCNN
-class DepthwiseSeparableConv(nn.Module):
-    def __init__(self, in_ch, out_ch, kernel_size, stride=1):
+class DepthwiseSeparableConv2d(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size, padding=0):
         super().__init__()
-        padding = kernel_size // 2
-        self.depthwise = nn.Conv2d(in_ch, in_ch, kernel_size, stride=stride,
-                                    padding=padding, groups=in_ch, bias=False)
-        self.pointwise = nn.Conv2d(in_ch, out_ch, 1, bias=False)
-        self.bn = nn.BatchNorm2d(out_ch)
-        self.relu = nn.ReLU(inplace=True)
+        self.depthwise = nn.Conv2d(in_channels, in_channels, kernel_size=kernel_size, padding=padding, groups=in_channels, bias=False)
+        self.pointwise = nn.Conv2d(in_channels, out_channels, kernel_size=1, bias=False)
+        self.bn = nn.BatchNorm2d(out_channels)
     def forward(self, x):
-        x = self.depthwise(x)
-        x = self.pointwise(x)
-        x = self.bn(x)
-        return self.relu(x)
+        return self.pointwise(self.depthwise(x))
 
-class ParallelDSBlock(nn.Module):
-    def __init__(self, in_ch, out_ch, stride=1):
-        super().__init__()
-        branch_ch = out_ch // 2
-        self.branch_a = DepthwiseSeparableConv(in_ch, branch_ch, kernel_size=3, stride=stride)
-        self.branch_b = DepthwiseSeparableConv(in_ch, branch_ch, kernel_size=5, stride=stride)
-        self.fuse = nn.Sequential(
-            nn.Conv2d(branch_ch * 2, out_ch, 1, bias=False),
-            nn.BatchNorm2d(out_ch),
-            nn.ReLU(inplace=True),
-        )
-    def forward(self, x):
-        a = self.branch_a(x)
-        b = self.branch_b(x)
-        x = torch.cat([a, b], dim=1)
-        return self.fuse(x)
 
 class PDSCNN(nn.Module):
-    def __init__(self, num_classes=4, in_ch=3, widths=(32, 64, 128, 256, 512)):
+    def __init__(self, num_classes=4, in_ch=3):
         super().__init__()
-        self.stem = nn.Sequential(
-            nn.Conv2d(in_ch, widths[0], 3, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(widths[0]),
-            nn.ReLU(inplace=True),
-        )
-        stages = []
-        in_c = widths[0]
-        for w in widths[1:]:
-            stages.append(ParallelDSBlock(in_c, w, stride=2))
-            in_c = w
-        self.stages = nn.Sequential(*stages)
-        self.gap = nn.AdaptiveAvgPool2d(1)
-        self.feature_dim = widths[-1]
-        self.classifier = nn.Linear(self.feature_dim, num_classes)
+        self.branch_11 = DepthwiseSeparableConv2d(in_ch, 64, 11, padding=5)
+        self.branch_9 = DepthwiseSeparableConv2d(in_ch, 64, 9, padding=4)
+        self.branch_7 = DepthwiseSeparableConv2d(in_ch, 64, 7, padding=3)
+        self.branch_5 = DepthwiseSeparableConv2d(in_ch, 64, 5, padding=2)
+        self.branch_3 = DepthwiseSeparableConv2d(in_ch, 64, 3, padding=1)
+        self.conv6 = DepthwiseSeparableConv2d(64 * 5, 256, 3, padding=0)
+        self.bn6 = nn.BatchNorm2d(256)
+        self.pool6 = nn.MaxPool2d(2, 2)
+        self.conv7 = DepthwiseSeparableConv2d(256, 128, 3, padding=0)
+        self.bn7 = nn.BatchNorm2d(128)
+        self.pool7 = nn.MaxPool2d(2, 2)
+        self.conv8 = DepthwiseSeparableConv2d(128, 64, 3, padding=0)
+        self.bn8 = nn.BatchNorm2d(64)
+        self.pool8 = nn.MaxPool2d(2, 2)
+        self.conv9 = DepthwiseSeparableConv2d(64, 32, 3, padding=0)
+        self.bn9 = nn.BatchNorm2d(32)
+        self.pool9 = nn.MaxPool2d(2, 2)
+        self.relu = nn.ReLU(inplace=True)
+        self.flatten = nn.Flatten()
+        self.fc1 = nn.Linear(32, 512)
+        self.dropout = nn.Dropout(0.3)
+        self.fc2 = nn.Linear(512, 256)
+        self.classifier = nn.Linear(256, num_classes)
 
     def forward_features(self, x):
-        x = self.stem(x)
-        x = self.stages(x)
-        return self.gap(x).flatten(1)
+        x = torch.cat([self.branch_11(x), self.branch_9(x), self.branch_7(x), self.branch_5(x), self.branch_3(x)], dim=1)
+        x = self.pool6(self.bn6(self.relu(self.conv6(x))))
+        x = self.pool7(self.bn7(self.relu(self.conv7(x))))
+        x = self.pool8(self.bn8(self.relu(self.conv8(x))))
+        x = self.pool9(self.bn9(self.relu(self.conv9(x))))
+        x = nn.AdaptiveAvgPool2d(1)(x)
+        x = self.flatten(x)
+        x = self.relu(self.fc1(x))
+        x = self.dropout(x)
+        return x
 
     def forward(self, x):
-        feat = self.forward_features(x)
-        return self.classifier(feat), feat
+        feat = self.forward_features(x)  # 512-dim for fusion
+        x_cls = self.dropout(feat)
+        x_cls = self.fc2(x_cls)
+        x_cls = self.dropout(x_cls)
+        return self.classifier(x_cls), feat
 
+
+# RRELM definition so pickle can unpickle it
 # RRELM definition so pickle can unpickle it
 class RRELM:
     def __init__(self, n_hidden=512, C=1.0, activation='sigmoid', random_state=42):
@@ -149,8 +148,8 @@ def main():
     args = parser.parse_args()
 
     model_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'model')
-    vit_path = os.path.join(model_dir, 'vit_finetuned_best.pth')
-    pdscnn_path = os.path.join(model_dir, 'pdscnn_clahe_best.pth')
+    vit_path = os.path.join(model_dir, 'vit_finetuned/vit_best.pth')
+    pdscnn_path = os.path.join(model_dir, 'pdscnn_standalone_v3/pdscnn_final.pth')
     scaler_path = os.path.join(model_dir, 'scaler.pkl')
     rrelm_path = os.path.join(model_dir, 'rrelm.pkl')
 
@@ -189,7 +188,11 @@ def main():
 
     print("Loading PDSCNN...", file=sys.stderr)
     pdscnn_model = PDSCNN(num_classes=len(CLASS_NAMES)).to(device)
-    pdscnn_model.load_state_dict(torch.load(pdscnn_path, map_location=device))
+    pdscnn_ckpt = torch.load(pdscnn_path, map_location=device)
+    pdscnn_sd = pdscnn_ckpt.get('model_state_dict', pdscnn_ckpt) if isinstance(pdscnn_ckpt, dict) else pdscnn_ckpt
+    if any(k.startswith('module.') for k in pdscnn_sd):
+        pdscnn_sd = {k[len('module.'):]: v for k, v in pdscnn_sd.items() if k.startswith('module.')}
+    pdscnn_model.load_state_dict(pdscnn_sd, strict=True)
     pdscnn_model.eval()
 
     with open(scaler_path, 'rb') as f:
@@ -242,43 +245,50 @@ def main():
     # 4. Grad-CAM on PDSCNN
     try:
         pdscnn_wrapped = PDSCNNLogitsOnly(pdscnn_model).to(device)
-        target_layers = [pdscnn_model.stages[-1].fuse[0]]
+        target_layers = [pdscnn_model.conv9.pointwise]
         
         cam = GradCAM(model=pdscnn_wrapped, target_layers=target_layers)
         grayscale_cam = cam(input_tensor=input_tensor, targets=None)[0]
         
         cam_image = show_cam_on_image(rgb_img, grayscale_cam, use_rgb=True)
-        cv2.imwrite(gradcam_path, cv2.cvtColor(cam_image * 255, cv2.COLOR_RGB2BGR))
+        # cam_image is already uint8 (0-255)
+        cv2.imwrite(gradcam_path, cv2.cvtColor(cam_image, cv2.COLOR_RGB2BGR))
     except Exception as e:
+        print(f"Grad-CAM error: {e}", file=sys.stderr)
         gradcam_path = None
 
-    print("Generating SHAP (this may take a while)...", file=sys.stderr)
-    # 5. SHAP on PDSCNN
+    print("Generating SHAP explanation...", file=sys.stderr)
+    # 5. SHAP / Integrated Gradients attribution on PDSCNN
     try:
-        # Create a dummy background of zeros (ideal background would be sample images, but zero works for quick visualization)
-        background = torch.zeros((5, 3, IMG_SIZE, IMG_SIZE)).to(device)
-        explainer = shap.GradientExplainer(pdscnn_wrapped, background)
-        
-        shap_values, _ = explainer.shap_values(input_tensor, ranked_outputs=1)
-        
-        if isinstance(shap_values, list):
-            shap_numpy = np.asarray(shap_values[0])
-        else:
-            shap_numpy = np.asarray(shap_values)
-            
-        if shap_numpy.ndim == 5:
-            shap_numpy = np.squeeze(shap_numpy, axis=-1)
-        if shap_numpy.ndim == 4 and shap_numpy.shape[1] in [1, 3]:
-            shap_numpy = np.transpose(shap_numpy, (0, 2, 3, 1))
-
+        import matplotlib
+        matplotlib.use('Agg')
         import matplotlib.pyplot as plt
+
+        # Integrated Gradients attribution for predicted class
+        steps = 8
+        baseline = torch.zeros_like(input_tensor)
+        interpolated = [baseline + (float(i) / steps) * (input_tensor - baseline) for i in range(1, steps + 1)]
+        grads = []
+        for x_step in interpolated:
+            x_step = x_step.clone().detach().requires_grad_(True)
+            out_step = pdscnn_wrapped(x_step)
+            score = out_step[0, pred_idx]
+            g = torch.autograd.grad(score, x_step)[0]
+            grads.append(g)
+        avg_grads = torch.mean(torch.stack(grads), dim=0)
+        attributions = (input_tensor - baseline) * avg_grads  # (1, 3, 224, 224)
+
+        # Convert to (1, 224, 224, 3) for shap.image_plot
+        attr_np = attributions.squeeze(0).permute(1, 2, 0).detach().cpu().numpy()
+        shap_numpy = np.expand_dims(attr_np, axis=0)
+
         shap.image_plot([shap_numpy], np.expand_dims(rgb_img, axis=0), show=False)
         fig = plt.gcf()
         fig.set_size_inches(6, 3)
         plt.savefig(shap_path, bbox_inches='tight', dpi=100)
         plt.close(fig)
-        
     except Exception as e:
+        print(f"SHAP error: {e}", file=sys.stderr)
         shap_path = None
 
     # Output JSON response for the Node server
